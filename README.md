@@ -1,55 +1,47 @@
-# **cvcli: A Better Way to Copy-Paste in the Command Line**
+# cvcli: A Better Way to Copy and Paste in the Command Line  
 
-> **Project in Development**
+> Project under development  
 
-Clipboard management tools like **`Ditto`** or the built-in **Windows Clipboard** (accessible via `Windows + V`) are widely used in GUI environments. However, in the command line, there is a lack of such convenient clipboard tools. When it comes to persisting clipboard data in the terminal, the process often involves complex and manual operations.
-
-`cvcli` solves this problem by providing a **lightweight, command-line clipboard manager** with **key-value pair storage**. It is implemented in **Lua** and compiled into executables for **Windows** and **Linux** using `luastatic`.
-
----
-
-## **Installation**
-
-> In the future, `cvcli` may support installation via package managers like `winget`, `yum`, or `apt`. For now, the installation process is manual.
-
-### **Using Installation Scripts**
-
-`cvcli` provides installation scripts for a one-click setup:
-
-- **Windows**:  
-  - Download the project to your local machine and run the `install.bat` file located in the `install` directory.
-  - By default, `cvcli` will be installed in the `C:\Program Files\cvcli` directory.
-  - To change the default installation path, modify the target directory in the `install.bat` file.
-
-- **Linux**:  
-  - Open a terminal and run the following command:
-    ```bash
-    sudo bash install/install.sh
-    ```
-  - By default, `cvcli` will be installed in `/usr/local/bin/` and can be accessed globally via the `cvcli` command.
-
-### **Manual Installation**
-
-- **Windows**:  
-  - Move the downloaded `cvcli.exe` file to the `C:\Program Files\cvcli\` directory.
-  - Add this directory to the system's `PATH` environment variable (if it’s not already added).
-
-- **Linux**:  
-  - Move the downloaded `cvcli` file to `/usr/local/bin/`:
-    ```bash
-    sudo mv cvcli /usr/local/bin/
-    ```
-  - Ensure the file is executable:
-    ```bash
-    sudo chmod +x /usr/local/bin/cvcli
-    ```
+On GUI platforms, there are plenty of excellent clipboard enhancement tools, such as `Ditto` and the built-in Windows clipboard manager accessible via `Windows + V`.  
+However, the command-line interface lacks similarly convenient clipboard tools. When we want to persistently store clipboard content, the process can be cumbersome.  
+**`cvcli` provides a command-line clipboard key-value store tool**, implemented in `lua` and compiled into executable files for `Windows`, `Linux`, and `macOS` using `luastatic`.
 
 ---
 
-## **Getting Started**
+## Installation  
 
-`cvcli` stores data using key-value pairs in a `cvcli.yml` file located in the program's root directory.  
-If installed correctly, open your terminal and run `cvcli`. You should see the following output:
+> Future plans include supporting installation via `winget`, `yum`, and `apt`. For now, `cvcli` requires a manual installation process.
+
+### Using the Installation Script  
+
+`cvcli` provides an installation script for one-click setup.  
+
+- **Windows**:  
+  - Download `cvcli-win64.zip` from the `release` page and extract it locally.  
+  - Run `install.bat` as an administrator.  
+  - By default, `cvcli` will be installed in the `C:\Program Files\cvcli` directory.  
+  - To change the default installation path, edit the target directory configuration in `install.bat`.  
+
+> Currently, only `Windows` is supported.  
+
+### Manual Installation  
+
+- **Windows**:  
+  - Download `cvcli-win64.zip` from the `release` page and extract it locally.  
+  - Move the `cvcli.exe` and `cvcli.yml` files from the `program` folder to your desired installation directory.  
+  - Add this directory to the system `PATH` environment variable.  
+
+- **Linux/macOS**:  
+  - Download the corresponding platform's compressed package from the `release` page and extract it.  
+  - Add the executable file to the system path (e.g., `/usr/local/bin`).  
+  - Ensure the file has executable permissions (`chmod +x cvcli`).  
+
+---
+
+## Getting Started  
+
+`cvcli` stores data as key-value pairs, saved in the `cvcli.yml` file located in the program's directory.  
+If you’ve followed the installation instructions correctly, open your terminal and type `cvcli`. You should see something like this:  
 
 ```cmd
 C:\Users\linzh>cvcli  
@@ -57,16 +49,17 @@ C:\Users\linzh>cvcli
 ver: 0.1
 env: win
 key(s): 0
-lastkey: ---EMPTY--- 
-```
+lastkey: ---last--- 
+```  
 
-### **Output Breakdown**:
-- **Version**: `0.1`  
-- **Environment**: `Windows`  
-- **Stored Keys**: `0`  
-- **Last Used Key**: `---EMPTY---`  
+This output contains the following information:  
 
-If the `cvcli.yml` file is missing or corrupted, `cvcli` will prompt you to rebuild it:
+- **Version**: 0.1  
+- **Environment**: Windows  
+- **Number of stored keys**: 0  
+- **Last used key**: ---last---  
+
+During execution, `cvcli` will check if `cvcli.yml` is functioning properly. If not, it will display an error message:  
 
 ```cmd
 C:\Users\linzh>cvcli  
@@ -77,160 +70,175 @@ env: win
 Input 'rebuild' to rebuild (WARN: all data will lost)>>>
 ```
 
-Enter `rebuild` to recreate the `cvcli.yml` file. Upon success, you will see the following message:
-
-```cmd
----REBUILD SUCCESS---
-```
+Enter `rebuild` to reconstruct `cvcli.yml`. Upon successful reconstruction, you should see `---REBUILD SUCCESS---`.
 
 ---
 
-## **Commands**
+## Features and Commands  
 
-### **Write**
+### Write Operations  
 
-To store data in `cvcli`, use the following syntax:
+The standard syntax for storing data in `cvcli` is as follows:
 
 ```bash
 cvcli -w [k] [v]
 ```
 
-- `[k]`: The key name.
-- `[v]`: The value.
+- `[k]` is the key.  
+- `[v]` is the value.  
 
-#### **Key Naming Rules**
+#### Key Naming Rules  
 
-Keys in `cvcli` must follow these rules:
-1. **Keys cannot start with `---`** (reserved for `cvcli`).
-2. **Keys cannot contain special characters**, such as spaces.
-3. **Reserved keywords cannot be used as keys**, such as:
-   - `-w`, `-wv`, `-wl`, `-wvl`, `-wr`, `-wvlr`, `-l`, `-mk`, `-mv`, `-cc`, `-cr`.
-4. **Keys must be unique**: Adding a duplicate key will overwrite the previous value.
+Keys in `cvcli` must follow these rules:  
 
-#### **Examples**
+1. **Cannot start with three consecutive `-`** (this is reserved by `cvcli`).  
+2. **Cannot contain special characters**, such as spaces.  
+3. **Cannot use any of the following reserved keywords:**  
+   - `-w`, `-wv`, `-wl`, `-wvl`, `-wr`, `-wvlr`, `-l`, `-mk`, `-mv`, `-cc`, `-cr`  
+4. **Must not exceed 16 characters.**  
 
-- **Standard Write**:
-    ```bash
-    cvcli -w hello "hello world!"
-    ```
-    This stores the value `"hello world!"` under the key `hello`.
+Keys must be unique. If a key is reused, its previous value will be overwritten.  
 
-- **Write Clipboard Content to a Key**:
-    ```bash
-    cvcli -wv [k]
-    ```
-    Example:
-    ```bash
-    cvcli -wv p
-    ```
-    This stores the current clipboard content under the key `p`.
+#### Variants of the Write Command  
 
-### **Read**
+##### Standard Write  
 
-- **Read a Specific Key**:
-    ```bash
-    cvcli [k]
-    ```
-    Example:
-    ```bash
-    cvcli hello
-    ```
-    This retrieves the value associated with the key `hello` and copies it to the system clipboard.
+The following example demonstrates how to write a key-value pair:
 
-- **Read the Last Used Key**:
-    ```bash
-    cvcli -l
-    ```
+```bash  
+cvcli -w hello "hello world!"
+```  
 
-    This retrieves the value of the last accessed key and copies it to the clipboard.
+This writes the value `"hello world!"` to the key `hello`.
 
-### **Delete**
+##### Write Clipboard Content as the Value  
 
-`cvcli` allows you to delete specific keys:
+Insert the current clipboard content as the value:
+
+```bash  
+cvcli -wv [k]
+```  
+
+Example:
 
 ```bash
-cvcli [k]
+cvcli -wv p
+```
+
+This writes the current clipboard content to the key `p`.
+
+##### Restrict Writing to Existing Keys  
+
+Write a value to an existing key only:
+
+```bash
+cvcli -wr [k] [v]
 ```
 
 Example:
+
 ```bash
-cvcli hello
+cvcli -wr hello "updated value"
 ```
+
+This writes `"updated value"` to the key `hello` only if the key already exists.
+
+### Read Operations  
+
+`cvcli` provides two ways to retrieve stored data:
+
+1. **Read the value of a specific key:**
+
+   ```bash
+   cvcli [k]
+   ```
+
+   Example:
+
+   ```bash
+   cvcli hello
+   ```
+
+   This retrieves the value associated with the key `hello`.
+
+   **Note:**
+   - Retrieved values are automatically copied to the system clipboard for easy pasting.
+
+2. **Read the value of the last used key:**
+
+   ```bash
+   cvcli -l
+   ```
+
+   - `-l` stands for *last* and retrieves the value of the last used key.  
+   - Like specific key reads, the value is copied to the clipboard.  
+
+### Delete Operations  
+
+To delete a specific key and its value:
+
+```bash
+cvcli -r [k]
+```
+
+Example:
+
+```bash
+cvcli -r hello
+```
+
 This deletes the key `hello` and its associated value.
 
----
+### Search Operations  
 
-### **Combine or Replace Files**
+`cvcli` supports regular expression-based searches for keys or values:
 
-`cvcli` supports importing data from external `.yml` files.
+1. **Search for keys:**
 
-1. **Combine Files**:
-    ```bash
-    cvcli -cc [filename]
-    ```
-    Combines the contents of `filename.yml` with the current storage. Keys in the imported file overwrite duplicate keys in the existing data.
+   ```bash
+   cvcli -mk [pattern]
+   ```
 
-2. **Replace Files**:
-    ```bash
-    cvcli -cr [filename]
-    ```
-    Replaces the current storage with the contents of `filename.yml`.
+   Example:
 
----
+   ```bash
+   cvcli -mk "^h.*"
+   ```
 
-## **Errors and Troubleshooting**
+   This searches for all keys that start with `h`.
 
-Here are some common errors you might encounter:
+2. **Search for values:**
 
-1. **YML File Missing**:
-    ```cmd
-    >>>ERR 1<<< LOSS OF YML FILES
-    [CAUSE] The `cvcli.yml` file is missing.
-    [HINT] Use `cvcli -cr [filename]` to replace it or run `cvcli` to rebuild.
-    ```
+   ```bash
+   cvcli -mv [pattern]
+   ```
 
-2. **YML Formatting Error**:
-    ```cmd
-    >>>ERR 2<<< YML FORMATTING ERROR
-    [CAUSE] The `cvcli.yml` file contains invalid formatting.
-    [HINT] Manually check the file or replace it with a valid one.
-    ```
+   Example:
 
-3. **Clipboard Read Failure**:
-    ```cmd
-    >>>ERR 4<<< CLIPBOARD READ FAILURE
-    [CAUSE] Unable to read clipboard content.
-    [HINT] Ensure your system clipboard service is functioning correctly.
-    ```
+   ```bash
+   cvcli -mv "world"
+   ```
 
-4. **Key Not Found**:
-    ```cmd
-    >>>ERR 6<<< KEY NOT FOUND
-    [CAUSE] The specified key does not exist.
-    [HINT] Use an existing key or create a new one first.
-    ```
+   This searches for entries where the value contains `world`.
 
-5. **Invalid Key Name**:
-    ```cmd
-    >>>ERR 11<<< INVALID KEY NAME
-    [CAUSE] The provided key name is invalid.
-    [HINT] Ensure the key follows the naming rules.
-    ```
+### Merge or Replace Files  
 
-6. **Merge Conflict**:
-    ```cmd
-    >>>ERR 9<<< MERGE CONFLICT
-    [CAUSE] Conflicting keys were found during a file merge.
-    [HINT] Manually resolve the conflicts or use the replace option.
-    ```
+`cvcli` allows you to merge or replace the current storage with an external `.yml` file:
 
-7. **Permission Denied**:
-    ```cmd
-    >>>ERR 14<<< INSUFFICIENT PERMISSIONS
-    [CAUSE] The user lacks permission to access or modify the file/clipboard.
-    [HINT] Ensure you have the necessary permissions (e.g., administrator privileges).
-    ```
+1. **Merge Files:**
 
----
+   ```bash
+   cvcli -cc [filename]
+   ```
 
-For more information or contributions, visit the [GitHub repository](https://github.com/Water-Run/cvcli).  
+   - `-cc` stands for *copy and combine*. It merges the content of the specified `filename.yml` with the existing storage.  
+   - If duplicate keys exist, a conflict resolution prompt will appear.  
+
+2. **Replace Files:**
+
+   ```bash
+   cvcli -cr [filename]
+   ```
+
+   - `-cr` stands for *copy and replace*. It replaces the current storage with the content of the specified `filename.yml`.  
+   - To prevent accidental data loss, this operation requires three confirmations.
