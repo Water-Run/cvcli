@@ -26,7 +26,7 @@ end
 -- Get current operating system information
 -- @return: Operating system type string
 local function get_os_env()
-    return "win"
+    return "win" -- Only support windows for now
 end
 
 -- Operating system related clipboard operations

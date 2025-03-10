@@ -1,20 +1,36 @@
 @echo off
-echo Starting to build cvcli.exe...
 
-REM Compile using luastatic
-luastatic cvcli.lua -o cvcli.exe
+rem Set paths
+set SRLUA=srglue.exe
+set SRLUA_MAIN=srlua.exe
+set LUA_FILE=..\code\cvcli.lua
+set OUTPUT=cvcli.exe
 
-REM Check if the compilation was successful
-if %ERRORLEVEL% NEQ 0 (
-    echo Compilation failed. Please ensure luastatic and GCC are installed correctly.
+rem Check if srglue.exe exists
+if not exist "%SRLUA%" (
+    echo Error: %SRLUA% not found.
     exit /b 1
 )
 
-echo Build successful!
+rem Check if srlua.exe exists
+if not exist "%SRLUA_MAIN%" (
+    echo Error: %SRLUA_MAIN% not found.
+    exit /b 1
+)
 
-REM Create ZIP package
-echo Creating release_win64.zip...
-if exist release_win64.zip del release_win64.zip
-powershell -Command "Compress-Archive -Path cvcli.exe, install.bat, cvcli.yml -DestinationPath release_win64.zip -Force"
+rem Check if Lua file exists
+if not exist "%LUA_FILE%" (
+    echo Error: Lua file %LUA_FILE% not found.
+    exit /b 1
+)
 
-echo Done! release_win64.zip has been created.
+rem Build the executable
+echo Generating %OUTPUT%...
+"%SRLUA%" "%SRLUA_MAIN%" "%LUA_FILE%" "%OUTPUT%"
+
+if %errorlevel% neq 0 (
+    echo Error: Build failed.
+    exit /b 1
+)
+
+echo Build complete: %OUTPUT%
