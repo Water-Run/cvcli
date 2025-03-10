@@ -1,20 +1,20 @@
 @echo off
-echo 开始构建 cvcli.exe...
+echo Starting to build cvcli.exe...
 
-REM 使用luastatic编译
+REM Compile using luastatic
 luastatic cvcli.lua -o cvcli.exe
 
-REM 检查编译是否成功
+REM Check if the compilation was successful
 if %ERRORLEVEL% NEQ 0 (
-    echo 编译失败，请确认luastatic和GCC已正确安装
+    echo Compilation failed. Please ensure luastatic and GCC are installed correctly.
     exit /b 1
 )
 
-echo 构建成功！
+echo Build successful!
 
-REM 创建ZIP包
-echo 正在创建release_win64.zip...
+REM Create ZIP package
+echo Creating release_win64.zip...
 if exist release_win64.zip del release_win64.zip
 powershell -Command "Compress-Archive -Path cvcli.exe, install.bat, cvcli.yml -DestinationPath release_win64.zip -Force"
 
-echo 完成！release_win64.zip已创建
+echo Done! release_win64.zip has been created.

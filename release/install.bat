@@ -1,58 +1,58 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-REM 以管理员权限检查
+REM Check for administrator privileges
 net session >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
-    echo 请右键点击install.bat并选择"以管理员身份运行"
+    echo Please right-click on install.bat and select "Run as administrator"
     pause
     exit /b 1
 )
 
-REM 定义安装路径
+REM Define installation path
 set INSTALL_DIR=C:\Program Files\cvcli
 
-echo 正在安装 cvcli 到 %INSTALL_DIR%...
+echo Installing cvcli to %INSTALL_DIR%...
 
-REM 创建目标目录
+REM Create target directory
 if not exist "%INSTALL_DIR%" (
     mkdir "%INSTALL_DIR%"
     if !ERRORLEVEL! NEQ 0 (
-        echo 创建目录失败: %INSTALL_DIR%
+        echo Failed to create directory: %INSTALL_DIR%
         pause
         exit /b 1
     )
 )
 
-REM 拷贝文件
-echo 正在复制文件...
+REM Copy files
+echo Copying files...
 copy /Y "cvcli.exe" "%INSTALL_DIR%"
 if not exist "%INSTALL_DIR%\cvcli.yml" (
     copy /Y "cvcli.yml" "%INSTALL_DIR%"
 ) else (
-    echo cvcli.yml已存在，保留现有配置文件...
+    echo cvcli.yml already exists, keeping the current configuration file...
 )
 
-REM 设置环境变量
-echo 正在配置环境变量...
+REM Set environment variable
+echo Configuring environment variables...
 setx PATH "%PATH%;%INSTALL_DIR%" /M
 if %ERRORLEVEL% NEQ 0 (
-    echo 环境变量设置失败
+    echo Failed to set environment variable
     pause
     exit /b 1
 )
 
 echo.
-echo 安装完成！
-echo cvcli已安装至 %INSTALL_DIR%
-echo 已添加到系统PATH环境变量
+echo Installation complete!
+echo cvcli has been installed to %INSTALL_DIR%
+echo Added to the system PATH environment variable
 echo.
-echo 请重新打开命令提示符或PowerShell窗口以使环境变量生效
+echo Please reopen the Command Prompt or PowerShell window to apply the environment variable
 echo.
-echo 使用示例:
-echo   cvcli -w mykey "some text"  添加或更新一个键值对
-echo   cvcli mykey                 读取键值并复制到剪贴板
-echo   cvcli -l                    读取上次使用的键值
+echo Usage examples:
+echo   cvcli -w mykey "some text"  Add or update a key-value pair
+echo   cvcli mykey                 Read a value and copy it to the clipboard
+echo   cvcli -l                    Read the last used value
 echo.
 
 pause
