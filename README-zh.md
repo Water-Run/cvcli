@@ -12,11 +12,13 @@
 
 ### 使用安装脚本  
 
+> 安装脚本暂不可用,目前只能执行手动安装  
+
 `cvcli` 提供了安装脚本以实现一键安装的功能。  
 
 - **Windows**:  
   - 从`release`中下载`cvcli-win64.zip`至本地并解压缩  
-  - 以管理员身份运行`install.bat`  
+  - 以管理员身份运行`install.bat`,随后重启设备  
   - 默认情况下，`cvcli` 将安装至 `C:\Program Files\cvcli` 目录  
   - 如果需要更改默认安装路径，请编辑 `install.bat` 中的目标目录配置  
 
@@ -26,8 +28,8 @@
 
 - **Windows**:  
   - 从`release`中下载`cvcli-win64.zip`至本地并解压缩  
-  - 将`program`文件夹中`cvcli.exe`和`cvcli.yml`文件移动到你需要安装的目录  
-  - 将该目录添加到系统环境变量的 `PATH` 中  
+  - 将`program`文件夹中`cvcli.exe`文件移动到你需要安装的目录  
+  - 将该目录添加到系统环境变量的 `PATH` 中,随后重启设备  
 
 > 自行构建: 在`build`文件夹运行`build.bat`.项目自带了构建于Win64平台的`srlua`,如需自行构建,访问[srlua项目链接](https://github.com/LuaDist/srlua)  
 
@@ -72,9 +74,33 @@ Input 'rebuild' to rebuild (WARN: all data will lost)>>>
 按照以下代码块的内容,参考你的第一个使用实例:   
 
 ```cmd
+PS C:\Users\linzh> cvcli -w key1 value1
+---WRITTEN IN `key1`---
+PS C:\Users\linzh> cvcli key1
+---`key1` COPIED TO CLIPBOARD---
+PS C:\Users\linzh> cvcli -wv key2
+---WRITTEN IN `key2`---
+PS C:\Users\linzh> cvcli -l
+---`key2` COPIED TO CLIPBOARD---
+PS C:\Users\linzh> cvcli -mk "."
+FOR key MATCHING: .
+---3 RESULTS---
+| KEY            |  VALUE |
+| key1             |  value1 |
+| ---last---       |  key2 |
+| key2             |  value1 |
 ```
 
-以上操作
+以上进行了如下操作:  
+
+1. 向键`key1`写入值`value1`  
+2. 读取键`key1`的值并写入剪贴板  
+3. 向键`key2`写入当前剪贴板中的值(`value1`)
+4. 读取上一个使用的键(`key2`)  
+5. 显示当前存储的所有键  
+
+> 由于终端的限制,在显示非ASCII码的字符时可能出现乱码  
+
 ---
 
 ## 功能指令
@@ -196,7 +222,7 @@ cvcli -r hello
 
 `cvcli` 支持使用正则表达式进行键名或值的搜索：
 
-> 如需列出全部内容,考虑使用`"*"`匹配.如`cvcli -mk "*"`即匹配所有的键  
+> 如需列出全部内容,考虑使用`"."`匹配.如`cvcli -mk "."`即匹配所有的键  
 
 1. **搜索键名：**
 

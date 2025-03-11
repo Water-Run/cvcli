@@ -2,13 +2,13 @@
 cvcli project source code
 
 Author: WaterRun
-Date: 2025-03-10
+Date: 2025-03-11
 File: cvcli.lua
 ]]
 
 -- Global constants
 YML_FILENAME = 'cvcli.yml'
-VERSION = 0.1
+VERSION = 0.2
 
 -- ============== Utility functions ==============
 
@@ -37,7 +37,7 @@ local function set_clipboard(text)
     local success = false
     
     -- Windows clipboard operation
-    local tempfile = os.tmpname()
+    local tempfile = "cvcli.tmp"
     local file = io.open(tempfile, "w")
     if file then
         file:write(text)
@@ -59,7 +59,7 @@ local function get_clipboard()
     local text = nil
     
     -- Windows clipboard operation
-    local tempfile = os.tmpname()
+    local tempfile = "cvcli.tmp"
     -- Use powershell command to read clipboard content to file
     local cmd = 'powershell -command "Get-Clipboard | Out-File -Encoding utf8 \'' .. tempfile .. '\'"'
     local result = os.execute(cmd)
@@ -84,32 +84,32 @@ end
 local function is_valid_key(key)
     -- Check if empty
     if not key or key == "" then
-        return false, "Key cannot be empty"
+        return false, "EMPTY KEY"
     end
     
     -- Check length
     if #key > 16 then
-        return false, "Key cannot exceed 16 characters"
+        return false, "KEY EXCEED 16 CHARACTERS"
     end
     
     -- Check if starts with three consecutive '-'
     if key:match("^%-%-%-") and key ~= "---last---" then
-        return false, "Key cannot start with three consecutive '-' (this is reserved for cvcli)"
+        return false, "KEY START WITH 3 CONSECUTIVE '-' (RESERVED)"
     end
     
     -- Check if contains special characters (spaces, etc.)
     if key:match("%s") then
-        return false, "Key cannot contain spaces"
+        return false, "KEY CONTAIN SPACES"
     end
     
     -- Check if it's a reserved word
     local reserved_keys = {
-        "-w", "-wv", "-wl", "-wvl", "-wr", "-wvlr", "-l", "-mk", "-mv", "-cc", "-cr"
+        "-w", "-wv", "-wl", "-wvl", "-wr", "-wvlr", "-l", "-mk", "-mv", "-cc", "-cr", "-r"
     }
     
     for _, reserved in ipairs(reserved_keys) do
         if key == reserved then
-            return false, "Key cannot be a reserved word: " .. reserved
+            return false, "KEY IS RESERVED: In " .. reserved
         end
     end
     
@@ -125,14 +125,14 @@ local function check_yml_valid()
         -- Try to create the file and add default content
         local create_file = io.open(YML_FILENAME, "w")
         if not create_file then
-            return false, nil, "YML file does not exist and cannot be created. Check permissions"
+            return false, nil, "YML NOT EXIST AND CANNOT BE CREATED: CHECK PERMISSIONS"
         end
         create_file:write("---last---: default\n")
         create_file:close()
         
         file = io.open(YML_FILENAME, "r")
         if not file then
-            return false, nil, "YML file still cannot be read after creation. Check permissions"
+            return false, nil, "YML CANNOT BE READ: CHECK PERMISSIONS"
         end
     end
     
@@ -150,7 +150,7 @@ local function check_yml_valid()
         
         -- Check if format is correct
         if not k or not v then
-            return false, nil, "YML file format error, not standard key-value pair format"
+            return false, nil, "YML FORMAT ERROR: NOT STD KEY-VALUE"
         end
         
         -- Check if key is valid
@@ -161,7 +161,7 @@ local function check_yml_valid()
         
         -- Check for duplicate keys
         if keys[k] then
-            return false, nil, "Duplicate key exists in YML file: " .. k
+            return false, nil, "YML FORMAT ERROR: DUPLICATE KEYS" .. k
         end
         
         -- Record key
@@ -176,13 +176,13 @@ local function check_yml_valid()
     
     -- Check if it contains ---last--- key
     if not has_last_key then
-        return false, data, "YML file is missing required ---last--- key"
+        return false, data, "YML MISSING REQUIRED KEYS"
     end
     
     -- Check if file is writable
     file = io.open(YML_FILENAME, "a")
     if not file then
-        return false, data, "YML file is not writable. Check permissions"
+        return false, data, "CANNOT WRITE YML: CHECK PERMISSIONS"
     end
     file:close()
     
@@ -215,7 +215,7 @@ local function ensure_yml_valid()
                 -- Check again
                 return check_yml_valid()
             else
-                return false, nil, "Cannot fix YML file. Check permissions"
+                return false, nil, "CANNOT FIX YML: CHECK PERMISSIONS"
             end
         else
             -- Try to create new file
@@ -227,7 +227,7 @@ local function ensure_yml_valid()
                 -- Check again
                 return check_yml_valid()
             else
-                return false, nil, "Cannot create YML file. Check permissions"
+                return false, nil, "CANNOT CREATE YML: CHECK PERMISSIONS"
             end
         end
     end
@@ -240,7 +240,7 @@ end
 local function rebuild_yml()
     local file = io.open(YML_FILENAME, "w")
     if not file then
-        cvcli_std_note("Cannot create YML file. Check permissions", true)
+        cvcli_std_note("CANNOT CREATE YML: CHECK PERMISSIONS", true)
         return false
     end
     
@@ -266,13 +266,13 @@ local function cvcli_write(key, value, readonly)
     -- Check if YML file is valid
     local yml_valid, data, yml_err = ensure_yml_valid()
     if not yml_valid then
-        cvcli_std_note(yml_err .. ". Run `cvcli` command to rebuild", true)
+        cvcli_std_note(yml_err .. ". HINT: RUN `cvcli` COMMAND TO REBUILD", true)
         return false
     end
     
     -- Check read-only mode
     if readonly and data[key] == nil then
-        cvcli_std_note("Read-only mode restricts creating new keys", true)
+        cvcli_std_note("CANNOT CREATE NEW KEY `" .. key .. "` IN READONLY MODE", true)
         return false
     end
     
@@ -291,10 +291,10 @@ local function cvcli_write(key, value, readonly)
             file:write(k .. ": " .. tostring(v) .. "\n")
         end
         file:close()
-        print("Value written for key '" .. key .. "'")
+        cvcli_std_note("WRITTEN IN `" .. key .. "`")
         return true
     else
-        cvcli_std_note("Error occurred during write. Check permissions", true)
+        cvcli_std_note("WRITE ERROR. CHECK PERMISSIONS", true)
         return false
     end
 end
@@ -305,14 +305,14 @@ end
 local function cvcli_read(key)
     -- Check parameters
     if not key then
-        cvcli_std_note("Key cannot be empty", true)
+        cvcli_std_note("KEY CANNOT BE EMPTY", true)
         return nil
     end
     
     -- Check if YML file is valid
     local yml_valid, data, yml_err = ensure_yml_valid()
     if not yml_valid then
-        cvcli_std_note(yml_err .. ". Run `cvcli` command to rebuild", true)
+        cvcli_std_note(yml_err .. " HINT: RUN `cvcli` COMMAND TO REBUILD", true)
         return nil
     end
     
@@ -334,15 +334,14 @@ local function cvcli_read(key)
         -- Copy the read value to clipboard
         local value = data[key]
         if set_clipboard(value) then
-            print("Value for key '" .. key .. "' has been read and copied to clipboard: " .. value)
+            cvcli_std_note("`" .. key .. "` COPIED TO CLIPBOARD")
         else
-            print("Value for key '" .. key .. "' has been read: " .. value)
-            cvcli_std_note("Failed to copy to clipboard", true)
+            cvcli_std_note("READ KEY, BUT FAILED TO COPY TO CLIPBOARD", true)
         end
         
         return value
     else
-        cvcli_std_note("Specified key does not exist", true)
+        cvcli_std_note("NOT EXIST KEY `" .. key .. "`", true)
         return nil
     end
 end
@@ -353,14 +352,14 @@ local function cvcli_read_last()
     -- Check if YML file is valid
     local yml_valid, data, yml_err = ensure_yml_valid()
     if not yml_valid then
-        cvcli_std_note(yml_err .. ". Run `cvcli` command to rebuild", true)
+        cvcli_std_note(yml_err .. " HINT: RUN `cvcli` COMMAND TO REBUILD", true)
         return nil
     end
     
     -- Get last used key
     local last_key = data["---last---"]
-    if last_key == "default" or not data[last_key] then
-        cvcli_std_note("No valid last usage record", true)
+    if not data[last_key] then
+        cvcli_std_note("NO VALID LAST KEY", true)
         return nil
     end
     
@@ -369,10 +368,9 @@ local function cvcli_read_last()
     
     -- Copy the read value to clipboard
     if set_clipboard(value) then
-        print("Value of last used key '" .. last_key .. "' has been read and copied to clipboard: " .. value)
+        cvcli_std_note("`" .. last_key .. "` COPIED TO CLIPBOARD")
     else
-        print("Value of last used key '" .. last_key .. "' has been read: " .. value)
-        cvcli_std_note("Failed to copy to clipboard", true)
+        cvcli_std_note("READ KEY, BUT FAILED TO COPY TO CLIPBOARD", true)
     end
     
     return value
@@ -384,26 +382,26 @@ end
 local function cvcli_remove(key)
     -- Check parameters
     if not key then
-        cvcli_std_note("Key cannot be empty", true)
+        cvcli_std_note("KEY CANNOT BE EMPTY", true)
         return false
     end
     
     -- Not allowed to delete ---last--- key
     if key == "---last---" then
-        cvcli_std_note("Cannot delete system reserved key ---last---", true)
+        cvcli_std_note("KEY IS RESERVED", true)
         return false
     end
     
     -- Check if YML file is valid
     local yml_valid, data, yml_err = ensure_yml_valid()
     if not yml_valid then
-        cvcli_std_note(yml_err .. ". Run `cvcli` command to rebuild", true)
+        cvcli_std_note(yml_err .. " HINT: RUN `cvcli` COMMAND TO REBUILD", true)
         return false
     end
     
     -- Check if key exists
     if not data[key] then
-        cvcli_std_note("Specified key does not exist", true)
+        cvcli_std_note("NOT EXIST KEY `" .. key .. "`", true)
         return false
     end
     
@@ -422,10 +420,10 @@ local function cvcli_remove(key)
             file:write(k .. ": " .. tostring(v) .. "\n")
         end
         file:close()
-        print("Key '" .. key .. "' has been deleted")
+        cvcli_std_note("DELETED `" .. key .. "`")
         return true
     else
-        cvcli_std_note("Error occurred during write. Check permissions", true)
+        cvcli_std_note("WRITE ERROR: CHECK PERMISSIONS", true)
         return false
     end
 end
@@ -436,20 +434,20 @@ end
 local function cvcli_match_show(target, re_match)
     -- Check parameters
     if not target or not re_match then
-        cvcli_std_note("Parameters cannot be empty", true)
+        cvcli_std_note("EMPTY PARAM", true)
         return false
     end
     
     -- Ensure target is key or value
     if target ~= "key" and target ~= "value" then
-        cvcli_std_note("Match target must be 'key' or 'value'", true)
+        cvcli_std_note("MATCH TARGET MUST BE 'key' OR 'value'", true)
         return false
     end
     
     -- Check if YML file is valid
     local yml_valid, data, yml_err = ensure_yml_valid()
     if not yml_valid then
-        cvcli_std_note(yml_err .. ". Run `cvcli` command to rebuild", true)
+        cvcli_std_note(yml_err .. " HINT: RUN `cvcli` COMMAND TO REBUILD", true)
         return false
     end
     
@@ -470,12 +468,12 @@ local function cvcli_match_show(target, re_match)
     
     -- Output results
     local target_name = (target == "key") and "key" or "value"
-    print("For " .. target_name .. " matching regex:" .. re_match)
+    print("FOR " .. target_name .. " MATCHING: " .. re_match)
     
     if count == 0 then
-        print("---No results---")
+        print("---NO RESULTS---")
     else
-        print("---" .. count .. " results---")
+        print("---" .. count .. " RESULTS---")
         print("| KEY            |  VALUE |")
         for _, match in ipairs(matches) do
             -- Handle KEY display length
@@ -520,7 +518,7 @@ local function cvcli_info()
                     print("lastkey: " .. data["---last---"])
                 end
             else
-                print("Rebuild failed")
+                print("REBUILD FAILED")
             end
         end
     else
@@ -543,27 +541,27 @@ end
 local function cvcli_combine_replace(mode, file)
     -- Check parameters
     if not mode or not file then
-        cvcli_std_note("Parameters cannot be empty", true)
+        cvcli_std_note("EMPTY PARAM", true)
         return false
     end
     
     -- Check if mode is valid
     if mode ~= "combine" and mode ~= "replace" then
-        cvcli_std_note("Mode must be 'combine' or 'replace'", true)
+        cvcli_std_note("MODE MUST BE 'combine' OR 'replace'", true)
         return false
     end
     
     -- Check if YML file is valid
     local yml_valid, current_data, yml_err = ensure_yml_valid()
     if not yml_valid then
-        cvcli_std_note(yml_err .. ". Run `cvcli` command to rebuild", true)
+        cvcli_std_note(yml_err .. " HINT: RUN `cvcli` COMMAND TO REBUILD", true)
         return false
     end
     
     -- Check if target file exists
     local target_file = io.open(file, "r")
     if not target_file then
-        cvcli_std_note("Target file does not exist: " .. file, true)
+        cvcli_std_note("TARGET FILE NOT EXIST: " .. file, true)
         return false
     end
     
@@ -578,7 +576,7 @@ local function cvcli_combine_replace(mode, file)
         -- Check if format is correct
         if not k or not v then
             is_valid_yml = false
-            error_message = "Target file format error, not standard key-value pair format"
+            error_message = "TARGET FILE FORMAT ERROR"
             break
         end
         
@@ -586,14 +584,14 @@ local function cvcli_combine_replace(mode, file)
         local valid, err_msg = is_valid_key(k)
         if not valid and k ~= "---last---" then
             is_valid_yml = false
-            error_message = "Key '" .. k .. "' in target file " .. err_msg
+            error_message = "KEY `" .. k .. "` IN TARGET FILE " .. err_msg
             break
         end
         
         -- Check for duplicate keys
         if target_data[k] then
             is_valid_yml = false
-            error_message = "Duplicate key exists in target file: " .. k
+            error_message = "DUPLICATE KEYS: " .. k
             break
         end
         
@@ -611,14 +609,14 @@ local function cvcli_combine_replace(mode, file)
     
     -- Handle replace mode
     if mode == "replace" then
-        print("Warning: Replace mode will overwrite all existing data")
-        print("Please type 'yes' three times to confirm (type anything else to cancel): ")
+        print("WARNING: REPLACE MODE WILL OVERWRITE ALL EXISTING DATA")
+        print("PLEASE TYPE 'yes' THREE TIMES TO CONFIRM (TYPE ANYTHING ELSE TO CANCEL): ")
         
         for i = 1, 3 do
-            io.write("Confirm " .. i .. "/3: ")
+            io.write("CONFIRM " .. i .. "/3: ")
             local confirm = io.read()
             if confirm ~= "yes" then
-                print("Operation canceled")
+                print("OPERATION CANCELED")
                 return false
             end
         end
@@ -635,10 +633,10 @@ local function cvcli_combine_replace(mode, file)
                 file:write(k .. ": " .. tostring(v) .. "\n")
             end
             file:close()
-            print("Replace completed")
+            cvcli_std_note("REPLACE COMPLETED")
             return true
         else
-            cvcli_std_note("Error occurred during write. Check permissions", true)
+            cvcli_std_note("ERROR OCCURRED DURING WRITE. CHECK PERMISSIONS", true)
             return false
         end
     end
@@ -655,14 +653,14 @@ local function cvcli_combine_replace(mode, file)
         
         -- Handle conflicts
         if #conflicts > 0 then
-            print("Found " .. #conflicts .. " conflicting keys:")
+            print("FOUND " .. #conflicts .. " CONFLICTING KEYS:")
             for i, k in ipairs(conflicts) do
-                print(i .. ". " .. k .. ": current value=" .. current_data[k] .. ", new value=" .. target_data[k])
+                print(i .. ". " .. k .. ": CURRENT VALUE=" .. current_data[k] .. ", NEW VALUE=" .. target_data[k])
             end
             
-            print("\nResolve conflicts:")
+            print("\nRESOLVE CONFLICTS:")
             for i, k in ipairs(conflicts) do
-                io.write("Key '" .. k .. "': keep current value(1) or use new value(2)? ")
+                io.write("KEY '" .. k .. "': KEEP CURRENT VALUE(1) OR USE NEW VALUE(2)? ")
                 local choice = io.read()
                 
                 if choice == "2" then
@@ -688,10 +686,10 @@ local function cvcli_combine_replace(mode, file)
                 file:write(k .. ": " .. tostring(v) .. "\n")
             end
             file:close()
-            print("Combine completed")
+            cvcli_std_note("COMBINE COMPLETED")
             return true
         else
-            cvcli_std_note("Error occurred during write. Check permissions", true)
+            cvcli_std_note("ERROR OCCURRED DURING WRITE. CHECK PERMISSIONS", true)
             return false
         end
     end
@@ -719,7 +717,7 @@ local function execute_command(args)
     -- Write key-value pair: cvcli -w key value
     if cmd == "-w" then
         if #args < 3 then
-            cvcli_std_note("Write command requires key and value", true)
+            cvcli_std_note("WRITE COMMAND REQUIRES KEY AND VALUE", true)
             return false
         end
         return cvcli_write(args[2], args[3])
@@ -728,13 +726,13 @@ local function execute_command(args)
     -- Write clipboard value: cvcli -wv key
     if cmd == "-wv" then
         if #args < 2 then
-            cvcli_std_note("Write clipboard command requires key", true)
+            cvcli_std_note("WRITE CLIPBOARD COMMAND REQUIRES KEY", true)
             return false
         end
         
         local clipboard_text = get_clipboard()
         if not clipboard_text then
-            cvcli_std_note("Cannot get clipboard content", true)
+            cvcli_std_note("CANNOT GET CLIPBOARD CONTENT", true)
             return false
         end
         
@@ -744,16 +742,25 @@ local function execute_command(args)
     -- Write to existing key only: cvcli -wr key value
     if cmd == "-wr" then
         if #args < 3 then
-            cvcli_std_note("Write command requires key and value", true)
+            cvcli_std_note("WRITE COMMAND REQUIRES KEY AND VALUE", true)
             return false
         end
         return cvcli_write(args[2], args[3], true)
     end
     
+    -- Remove key: cvcli -r key
+    if cmd == "-r" then
+        if #args < 2 then
+            cvcli_std_note("REMOVE COMMAND REQUIRES KEY", true)
+            return false
+        end
+        return cvcli_remove(args[2])
+    end
+    
     -- Combine file: cvcli -cc filename
     if cmd == "-cc" then
         if #args < 2 then
-            cvcli_std_note("Combine command requires filename", true)
+            cvcli_std_note("COMBINE COMMAND REQUIRES FILENAME", true)
             return false
         end
         return cvcli_combine_replace("combine", args[2])
@@ -762,7 +769,7 @@ local function execute_command(args)
     -- Replace file: cvcli -cr filename
     if cmd == "-cr" then
         if #args < 2 then
-            cvcli_std_note("Replace command requires filename", true)
+            cvcli_std_note("REPLACE COMMAND REQUIRES FILENAME", true)
             return false
         end
         return cvcli_combine_replace("replace", args[2])
@@ -771,7 +778,7 @@ local function execute_command(args)
     -- Regular expression match display: cvcli -mk pattern (match keys)
     if cmd == "-mk" then
         if #args < 2 then
-            cvcli_std_note("Match command requires regular expression", true)
+            cvcli_std_note("MATCH COMMAND REQUIRES REGULAR EXPRESSION", true)
             return false
         end
         return cvcli_match_show("key", args[2])
@@ -780,7 +787,7 @@ local function execute_command(args)
     -- Regular expression match display: cvcli -mv pattern (match values)
     if cmd == "-mv" then
         if #args < 2 then
-            cvcli_std_note("Match command requires regular expression", true)
+            cvcli_std_note("MATCH COMMAND REQUIRES REGULAR EXPRESSION", true)
             return false
         end
         return cvcli_match_show("value", args[2])
