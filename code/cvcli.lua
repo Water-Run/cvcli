@@ -8,7 +8,7 @@ File: cvcli.lua
 
 -- Global constants
 YML_FILENAME = 'cvcli.yml'
-VERSION = 0.2
+VERSION = 0.3
 
 -- ============== Utility functions ==============
 
